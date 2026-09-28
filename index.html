@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14181c">
+<title>Quadro de Operadores</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#14181c; --panel:#1c2228; --card:#222a31; --line:#36404a;
+  --text:#eef1f4; --muted:#93a0ad;
+  --azul:#5aa0ff; --azul-bg:#1b3350;
+  --laranja:#ff8a1f; --laranja-bg:#33210f;
+  --font:"Barlow Condensed","Roboto Condensed","Arial Narrow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px}
+body{padding:env(safe-area-inset-top,0) 0 calc(env(safe-area-inset-bottom,0) + 24px)}
+header{padding:16px 14px 6px}
+h1{margin:0;font-size:28px;font-weight:700;letter-spacing:.3px}
+.data{color:var(--muted);font-size:15px;margin-top:2px}
+
+.resumo{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:4px 14px 10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi b{display:block;font-size:32px;line-height:1}
+.kpi span{color:var(--muted);font-size:14px}
+.kpi.alerta{border-color:var(--laranja);background:var(--laranja-bg)}
+.kpi.alerta b{color:var(--laranja);font-size:44px}
+
+.filtros{display:flex;gap:6px;padding:0 14px 10px;overflow-x:auto}
+.filtros button{white-space:nowrap;padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:16px}
+.filtros button.on{color:var(--text);border-color:var(--text)}
+
+.grade{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 14px}
+@media(min-width:640px){.grade{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:960px){.grade{grid-template-columns:repeat(5,1fr)}}
+.card{text-align:left;font:inherit;color:var(--text);background:var(--card);border:2px solid var(--azul);border-radius:10px;padding:10px 12px;min-height:96px;display:flex;flex-direction:column;gap:6px}
+.card .nome{font-size:22px;font-weight:700}
+.card.vazio{border:2px dashed var(--laranja);background:var(--laranja-bg)}
+.card .sem{color:var(--laranja);font-weight:700;font-size:16px}
+
+.grupo{grid-column:span 2;border:2px solid var(--line);border-radius:12px;padding:8px;background:var(--panel)}
+.gtit{font-size:20px;font-weight:700;padding:2px 4px 8px}
+.gtit small{display:block;color:var(--muted);font-size:14px;font-weight:400}
+.gslots{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.slot{width:100%}
+.pecabtns{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
+.pecabtn{padding:4px 10px;border-radius:14px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:14px}
+.pecabtn.on{color:#0b1622;background:var(--azul);border-color:var(--azul)}
+.chip{display:inline-block;background:var(--azul-bg);color:#cfe3ff;border-radius:6px;padding:3px 9px;font-size:16px;margin:0 4px 4px 0}
+
+.bloco{margin:18px 14px 0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.bloco h2{margin:0 0 8px;font-size:19px}
+.vazio-txt{color:var(--muted);font-size:15px}
+.chip.livre{background:#2a3038;color:var(--text)}
+
+.acoes{display:flex;gap:8px;padding:16px 14px 0;flex-wrap:wrap}
+.btn{padding:12px 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:17px;font-weight:600}
+.btn.primario{background:var(--azul);border-color:var(--azul);color:#0b1622}
+.btn.perigo{color:var(--laranja);border-color:var(--laranja)}
+
+details{margin:18px 14px 0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+summary{font-size:19px;font-weight:700;cursor:pointer}
+.linha{display:flex;gap:8px;margin:10px 0}
+input[type=text]{flex:1;min-width:0;padding:11px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-size:17px}
+.lista-edit{display:flex;flex-wrap:wrap;gap:6px}
+.lista-edit .chip{background:#2a3038;color:var(--text);display:inline-flex;gap:8px;align-items:center}
+.lista-edit .x{background:none;border:none;color:var(--laranja);font:inherit;font-size:18px;padding:0 2px;cursor:pointer}
+
+/* painel de escolha */
+.fundo{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.fundo.aberto{display:flex}
+.folha{background:var(--panel);width:100%;max-width:560px;max-height:82vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 14px calc(env(safe-area-inset-bottom,0) + 16px)}
+.folha h3{margin:0 0 4px;font-size:24px}
+.folha p{margin:0 0 12px;color:var(--muted);font-size:15px}
+.ops{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.op{padding:12px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-size:18px;text-align:left}
+.op small{display:block;color:var(--muted);font-size:13px}
+.op.sel{border:2px solid var(--azul);background:var(--azul-bg)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:#0b1622;padding:10px 16px;border-radius:8px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.on{opacity:1}
+:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Quadro de Operadores</h1>
+  <div class="data" id="data"></div>
+</header>
+
+<section class="resumo">
+  <div class="kpi alerta"><b id="kSem">0</b><span>sem operador</span></div>
+  <div class="kpi"><b id="kCom">0</b><span>com operador</span></div>
+  <div class="kpi"><b id="kTot">0</b><span>máquinas</span></div>
+</section>
+
+<div class="filtros" id="filtros">
+  <button data-f="todas" class="on">Todas</button>
+  <button data-f="sem">Sem operador</button>
+  <button data-f="com">Com operador</button>
+</div>
+
+<main class="grade" id="grade"></main>
+
+<section class="bloco">
+  <h2>Operadores sem máquina</h2>
+  <div id="livres"></div>
+</section>
+
+<div class="acoes">
+  <button class="btn primario" id="copiar">Copiar resumo</button>
+  <button class="btn perigo" id="limpar">Limpar quadro</button>
+</div>
+
+<details>
+  <summary>Cadastro de operadores e máquinas</summary>
+  <div class="linha">
+    <input type="text" id="novoOp" placeholder="Nome do operador">
+    <button class="btn" id="addOp">Adicionar</button>
+  </div>
+  <div class="lista-edit" id="editOps"></div>
+
+  <div class="linha" style="margin-top:18px">
+    <input type="text" id="novaMaq" placeholder="Nova máquina (ex: MS016)">
+    <button class="btn" id="addMaq">Adicionar</button>
+  </div>
+  <div class="lista-edit" id="editMaq"></div>
+</details>
+
+<div class="fundo" id="fundo">
+  <div class="folha" role="dialog" aria-modal="true">
+    <h3 id="fTitulo"></h3>
+    <p>Toque nos operadores para colocar ou tirar. Quem já está em outra máquina é movido pra esta.</p>
+    <div class="ops" id="fOps"></div>
+    <div class="linha" style="margin-top:14px">
+      <button class="btn primario" id="fOk" style="flex:1">Pronto</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY = 'quadro_operadores_v2';
+const PADRAO = {
+  machines: [
+    'MS001','MS002','MS003','MS004','MS005','MS006','MS007','MS008','MS009','MS010',
+    'MS011','MS012','MS013','MS014','MS015','Rebitadeira','Robô'
+  ],
+  operators: ['Gilmar','Gustavo','Ingrid','Silvana','Simonia'],
+  board: {}
+};
+// máquinas que soldam a mesma peça, cada uma com o seu operador
+const GRUPOS = [['MS014','MS015']];
+const OPCOES_PECA = ['Titanic','CNH'];
+
+function carregar(){
+  try{
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if(s && s.machines && s.operators && s.board){
+      s.pecaGrupo = s.pecaGrupo || OPCOES_PECA[0];
+      return s;
+    }
+  }catch(e){}
+  const novo = JSON.parse(JSON.stringify(PADRAO));
+  try{ // aproveita o que já foi cadastrado na versão anterior (1º turno)
+    const v1 = JSON.parse(localStorage.getItem('quadro_operadores_v1'));
+    if(v1 && v1.board){
+      novo.machines = v1.machines || novo.machines;
+      novo.operators = v1.operators || novo.operators;
+      novo.board = v1.board[1] || {};
+    }
+  }catch(e){}
+  novo.pecaGrupo = novo.pecaGrupo || OPCOES_PECA[0];
+  return novo;
+}
+function salvar(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+}
+let S = carregar();
+let filtro = 'todas';
+let maqAberta = null;
+
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const quadro = () => S.board;
+
+function ocupados(){
+  const q = quadro(), set = new Set();
+  Object.values(q).forEach(l => l.forEach(n => set.add(n)));
+  return set;
+}
+function maquinaDe(op){
+  const q = quadro();
+  return Object.keys(q).find(m => q[m].includes(op));
+}
+function unidades(){
+  const vistos = new Set(), u = [];
+  S.machines.forEach(m => {
+    if(vistos.has(m)) return;
+    const g = GRUPOS.find(g => g.includes(m));
+    if(g){
+      const membros = g.filter(x => S.machines.includes(x));
+      membros.forEach(x => vistos.add(x));
+      u.push(membros);
+    }else{
+      vistos.add(m); u.push([m]);
+    }
+  });
+  return u;
+}
+
+function corpoMaquina(m){
+  const ops = quadro()[m] || [];
+  return ops.length
+    ? `<span class="nome">${esc(m)}</span><span>${ops.map(o=>`<span class="chip">${esc(o)}</span>`).join('')}</span>`
+    : `<span class="nome">${esc(m)}</span><span class="sem">SEM OPERADOR</span>`;
+}
+function classeMaquina(m){
+  return (quadro()[m] || []).length ? '' : 'vazio';
+}
+
+function render(){
+  $('data').textContent = '1º turno - ' + new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  document.querySelectorAll('#filtros button').forEach(b => b.classList.toggle('on', b.dataset.f === filtro));
+
+  const q = quadro();
+  const tem = m => (q[m] || []).length > 0;
+  const com = S.machines.filter(tem).length;
+  $('kTot').textContent = S.machines.length;
+  $('kCom').textContent = com;
+  $('kSem').textContent = S.machines.length - com;
+
+  const lista = unidades().filter(u => {
+    const algumCom = u.some(tem), algumSem = u.some(m => !tem(m));
+    return filtro === 'todas' || (filtro === 'sem' && algumSem) || (filtro === 'com' && algumCom);
+  });
+  $('grade').innerHTML = lista.length ? lista.map(u => {
+    if(u.length > 1){
+      return `<div class="grupo"><div class="gtit">${u.map(esc).join(' + ')} <small>um operador em cada</small>
+        <span class="pecabtns">${OPCOES_PECA.map(p => `<button class="pecabtn ${S.pecaGrupo===p?'on':''}" data-peca="${esc(p)}">${esc(p)}</button>`).join('')}</span></div>
+        <div class="gslots">${u.map(m => `<button class="slot card ${classeMaquina(m)}" data-m="${esc(m)}">${corpoMaquina(m)}</button>`).join('')}</div></div>`;
+    }
+    const m = u[0];
+    return `<button class="card ${classeMaquina(m)}" data-m="${esc(m)}">${corpoMaquina(m)}</button>`;
+  }).join('') : '<p class="vazio-txt" style="grid-column:1/-1">Nenhuma máquina neste filtro.</p>';
+
+  const oc = ocupados();
+  const livres = S.operators.filter(o => !oc.has(o));
+  $('livres').innerHTML = livres.length
+    ? livres.map(o => `<span class="chip livre">${esc(o)}</span>`).join('')
+    : '<span class="vazio-txt">Todos os operadores já estão em uma máquina.</span>';
+
+  $('editOps').innerHTML = S.operators.map(o => `<span class="chip">${esc(o)}<button class="x" data-rmop="${esc(o)}" aria-label="Remover ${esc(o)}">×</button></span>`).join('');
+  $('editMaq').innerHTML = S.machines.map(m => `<span class="chip">${esc(m)}<button class="x" data-rmmaq="${esc(m)}" aria-label="Remover ${esc(m)}">×</button></span>`).join('');
+}
+
+function abrirFolha(m){
+  maqAberta = m;
+  $('fTitulo').textContent = m;
+  desenharFolha();
+  $('fundo').classList.add('aberto');
+}
+function desenharFolha(){
+  $('fOps').innerHTML = S.operators.map(o => {
+    const onde = maquinaDe(o);
+    const aqui = onde === maqAberta;
+    const sub = aqui ? 'nesta máquina' : (onde ? 'está na ' + esc(onde) : 'livre');
+    return `<button class="op ${aqui?'sel':''}" data-op="${esc(o)}">${esc(o)}<small>${sub}</small></button>`;
+  }).join('') || '<p class="vazio-txt">Cadastre operadores primeiro.</p>';
+}
+function alternar(op){
+  const q = quadro();
+  q[maqAberta] = q[maqAberta] || [];
+  if(q[maqAberta].includes(op)){
+    q[maqAberta] = q[maqAberta].filter(n => n !== op);
+  }else{
+    Object.keys(q).forEach(m => q[m] = q[m].filter(n => n !== op));
+    q[maqAberta].push(op);
+  }
+  salvar(); desenharFolha(); render();
+}
+
+function aviso(t){
+  const el = $('toast'); el.textContent = t; el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), 1800);
+}
+
+function resumoTexto(){
+  const q = quadro();
+  const d = new Date().toLocaleDateString('pt-BR');
+  const linhas = [`QUADRO DE OPERADORES - 1º TURNO - ${d}`, ''];
+  const fmt = m => { const ops = q[m] || []; return ops.length ? ops.join(' / ') : '⚠️ SEM OPERADOR'; };
+  unidades().forEach(u => {
+    if(u.length > 1){
+      linhas.push(`${u.join(' + ')} (${S.pecaGrupo}):`);
+      u.forEach(m => linhas.push(`  ${m}: ${fmt(m)}`));
+    }else{
+      linhas.push(`${u[0]}: ${fmt(u[0])}`);
+    }
+  });
+  const sem = S.machines.filter(m => !(q[m]||[]).length);
+  const oc = ocupados();
+  const livres = S.operators.filter(o => !oc.has(o));
+  linhas.push('', `Sem operador (${sem.length}): ${sem.join(', ') || 'nenhuma'}`);
+  linhas.push(`Operadores sem máquina: ${livres.join(', ') || 'nenhum'}`);
+  return linhas.join('\n');
+}
+
+/* eventos */
+$('filtros').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  filtro = b.dataset.f; render();
+});
+$('grade').addEventListener('click', e => {
+  const p = e.target.closest('[data-peca]');
+  if(p){ S.pecaGrupo = p.dataset.peca; salvar(); render(); return; }
+  const c = e.target.closest('[data-m]'); if(c) abrirFolha(c.dataset.m);
+});
+$('fOps').addEventListener('click', e => {
+  const b = e.target.closest('.op'); if(b) alternar(b.dataset.op);
+});
+$('fOk').addEventListener('click', () => $('fundo').classList.remove('aberto'));
+$('fundo').addEventListener('click', e => { if(e.target === $('fundo')) $('fundo').classList.remove('aberto'); });
+
+$('addOp').addEventListener('click', () => {
+  const n = $('novoOp').value.trim();
+  if(!n) return;
+  if(S.operators.some(o => o.toLowerCase() === n.toLowerCase())){ aviso('Esse operador já existe'); return; }
+  S.operators.push(n); S.operators.sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  $('novoOp').value = ''; salvar(); render();
+});
+$('addMaq').addEventListener('click', () => {
+  const n = $('novaMaq').value.trim();
+  if(!n) return;
+  if(S.machines.some(m => m.toLowerCase() === n.toLowerCase())){ aviso('Essa máquina já existe'); return; }
+  S.machines.push(n);
+  $('novaMaq').value = ''; salvar(); render();
+});
+document.addEventListener('click', e => {
+  const ro = e.target.closest('[data-rmop]');
+  if(ro){
+    const n = ro.dataset.rmop;
+    if(!confirm('Remover o operador ' + n + '?')) return;
+    S.operators = S.operators.filter(o => o !== n);
+    Object.keys(S.board).forEach(m => S.board[m] = S.board[m].filter(x => x !== n));
+    salvar(); render(); return;
+  }
+  const rm = e.target.closest('[data-rmmaq]');
+  if(rm){
+    const n = rm.dataset.rmmaq;
+    if(!confirm('Remover a máquina ' + n + '?')) return;
+    S.machines = S.machines.filter(m => m !== n);
+    delete S.board[n];
+    salvar(); render();
+  }
+});
+$('limpar').addEventListener('click', () => {
+  if(!confirm('Tirar todos os operadores das máquinas?')) return;
+  S.board = {}; salvar(); render(); aviso('Quadro limpo');
+});
+$('copiar').addEventListener('click', async () => {
+  const t = resumoTexto();
+  try{ await navigator.clipboard.writeText(t); aviso('Resumo copiado'); }
+  catch(e){
+    const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta);
+    ta.select(); try{ document.execCommand('copy'); aviso('Resumo copiado'); }catch(_){ aviso('Não foi possível copiar'); }
+    ta.remove();
+  }
+});
+
+render();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
